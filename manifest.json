@@ -1,0 +1,15 @@
+{
+  "name": "Cafe Finder Brunei",
+  "short_name": "Cafe Finder",
+  "start_url":"cafe.html",
+  "display": "standalone",
+  "background_color": "#FFF7ED",
+  "theme_color": '#451a03",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/924/924514.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
