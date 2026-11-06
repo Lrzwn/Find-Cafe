@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>☕ Cafe Finder Brunei - Cari Cafe Best</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}
+body{margin:0;background:#FFF7ED;color:#1c1917;padding-bottom:40px}
+.header{background:#451a03;color:white;padding:28px 16px 20px;text-align:center;border-radius:0 0 28px 28px;position:sticky;top:0;z-index:10}
+.logo{width:84px;height:84px;background:white;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:48px;box-shadow:0 6px 20px rgba(0,0,0,.3);border:4px solid #f59e0b}
+.logo span{filter:drop-shadow(0 2px 2px rgba(0,0,0,.2))}
+.header h1{margin:4px 0;font-size:26px;letter-spacing:.5px}
+.header p{margin:0;opacity:.85;font-size:13px}
+.search-box{padding:14px 14px 0;max-width:700px;margin:0 auto}
+.search-box input{width:100%;padding:14px 16px;border:2px solid #fed7aa;border-radius:16px;font-size:16px;outline:none;background:white}
+.search-box input:focus{border-color:#ea580c}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:12px 14px;max-width:700px;margin:0 auto;scrollbar-width:none}
+.filters::-webkit-scrollbar{display:none}
+.filters button{white-space:nowrap;padding:9px 14px;border-radius:999px;border:1px solid #e7c9a9;background:white;cursor:pointer;font-weight:700;font-size:13px}
+.filters button.active{background:#451a03;color:white;border-color:#451a03}
+.count{max-width:700px;margin:0 auto;padding:0 16px;color:#78716c;font-size:13px;font-weight:600}
+.grid{max-width:700px;margin:0 auto;padding:12px 14px;display:flex;flex-direction:column;gap:14px}
+.card{background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.07);border:1px solid #ffedd5}
+.card-top{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card h3{margin:0;font-size:18px;line-height:1.2}
+.badge{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;margin-top:6px;font-weight:800}
+.badge-muata{background:#ffedd5;color:#9a3412}.badge-tutong{background:#dcfce7;color:#166534}.badge-belait{background:#dbeafe;color:#1e40af}.badge-temburong{background:#f3e8ff;color:#6b21a8}
+.badge-vibe{background:#f5f5f4;color:#44403c;border:1px solid #e7e5e4}
+.card p{margin:8px 16px 0;color:#57534e;font-size:13.5px;line-height:1.5}
+.meta{display:flex;gap:12px;padding:10px 16px;color:#78716c;font-size:12.5px;font-weight:600}
+.actions{display:flex;gap:8px;padding:0 16px 16px}
+.actions a,.actions button{flex:1;text-align:center;text-decoration:none;padding:12px;border-radius:12px;font-weight:800;font-size:14px;border:none;cursor:pointer}
+.btn-map{background:#16a34a;color:white}
+.btn-fav{background:#fff7ed;color:#ea580c;border:1px solid #fed7aa !important}
+.btn-fav.loved{background:#ea580c;color:white}
+.empty{text-align:center;padding:40px 20px;color:#a8a29e}
+.fav-note{text-align:center;font-size:12px;color:#a8a29e;padding:0 16px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span>☕</span></div>
+  <h1>Cafe Finder Brunei 🇧🇳</h1>
+  <p>Cari cafe kecil & besar • BSB • Gadong • Jerudong • Tutong • Belait • Temburong</p>
+</div>
+
+<div class="search-box">
+  <input id="search" placeholder="🔍 Cari nama cafe... cth: Batches, Dil's, Piccolo, Kopi..." oninput="render()">
+</div>
+
+<div class="filters" id="filters">
+  <button class="active" onclick="setFilter('Semua',this)">Semua</button>
+  <button onclick="setFilter('Brunei-Muara',this)">Brunei-Muara</button>
+  <button onclick="setFilter('Tutong',this)">Tutong</button>
+  <button onclick="setFilter('Belait',this)">Belait</button>
+  <button onclick="setFilter('Temburong',this)">Temburong</button>
+  <button onclick="setFilter('Aesthetic',this)">✨ Aesthetic</button>
+  <button onclick="setFilter('Specialty Coffee',this)">☕ Specialty</button>
+  <button onclick="setFilter('Kopitiam',this)">🍞 Kopitiam Lama</button>
+  <button onclick="setFilter('Study',this)">📚 Study / Work</button>
+  <button onclick="setFilter('❤️ Fav',this)">❤️ Fav Saja</button>
+</div>
+
+<div class="count" id="count"></div>
+<div class="grid" id="grid"></div>
+<p class="fav-note">Tekan ❤️ untuk simpan fav. Fav tersimpan walaupun keluar apps.</p>
+
+<script>
+let favs = JSON.parse(localStorage.getItem('cafe_favs') || '[]');
+let currentFilter = 'Semua';
+
+// DATA - NAMA, DAERAH, AREA, VIBE, HARGA, BEST UNTUK, MAP QUERY
+const cafes = [
+{nama:"Piccolo Cafe", daerah:"Brunei-Muara", area:"Jalan McArthur, Waterfront BSB", vibe:"Aesthetic", harga:"$$", best:"Lavender Latte, Onde-Onde Latte, view Kampong Ayer", map:"Piccolo Cafe Jalan McArthur Bandar Seri Begawan"},
+{nama:"Chop Jing Chew", daerah:"Brunei-Muara", area:"Spg 5, Jalan Gadong", vibe:"Kopitiam", harga:"$", best:"Kedai kopi legend sejak 70-an, roti kawin, kopi kosong", map:"Chop Jing Chew Jalan Gadong Brunei"},
+{nama:"The Coffee Bean & Tea Leaf - BSB", daerah:"Brunei-Muara", area:"Jalan Sultan, BSB", vibe:"Study", harga:"$$", best:"Chain besar, buka 6AM, sesuai study", map:"Coffee Bean Tea Leaf Jalan Sultan Bandar Seri Begawan"},
+{nama:"The Coffee Bean - Kiulap", daerah:"Brunei-Muara", area:"Kiulap", vibe:"Study", harga:"$$", best:"Outlet Kiulap, ramai student", map:"Coffee Bean Kiulap Brunei"},
+{nama:"The Coffee Bean - Centrepoint", daerah:"Brunei-Muara", area:"Gadong, Centrepoint", vibe:"Study", harga:"$$", best:"Shopping + kopi", map:"Coffee Bean Centrepoint Gadong Brunei"},
+{nama:"Little Audrey's Cafe", daerah:"Brunei-Muara", area:"Q-Lap Complex, Kiulap", vibe:"Aesthetic", harga:"$$", best:"Brunch aesthetic, healthy food", map:"Little Audrey's Cafe Q Lap Kiulap Brunei"},
+{nama:"Dil's Cafe", daerah:"Brunei-Muara", area:"The Curve, Batu Bersurat", vibe:"Specialty Coffee", harga:"$$", best:"Kek premium, kopi specialty, owner friendly", map:"Dil's Cafe Batu Bersurat Brunei"},
+{nama:"Batches Coffee", daerah:"Brunei-Muara", area:"Batu Satu, Jalan Raja Isteri", vibe:"Specialty Coffee", harga:"$$", best:"Top 1 flat white Brunei, Brazilian / Ethiopian beans", map:"Batches Coffee Batu Satu Brunei"},
+{nama:"Roasted Sip - Jerudong", daerah:"Brunei-Muara", area:"Jerudong Complex, Spg 508", vibe:"Specialty Coffee", harga:"$$", best:"Roastery sendiri, pour over", map:"Roasted Sip Jerudong Brunei"},
+{nama:"Roasted Sip - Airport", daerah:"Brunei-Muara", area:"Brunei International Airport", vibe:"Specialty Coffee", harga:"$$", best:"Kopi sebelum fly", map:"Roasted Sip Airport Brunei"},
+{nama:"ZUS Coffee - Rimba Point", daerah:"Brunei-Muara", area:"Rimba Point, Gadong", vibe:"Study", harga:"$", best:"Murah, WiFi laju, bawa tumbler dapat 10% off", map:"ZUS Coffee Rimba Point Brunei"},
+{nama:"ZUS Coffee - Times Square", daerah:"Brunei-Muara", area:"Times Square, Berakas", vibe:"Study", harga:"$", best:"Lepak lepas shopping", map:"ZUS Coffee Times Square Brunei"},
+{nama:"HWC Coffee", daerah:"Brunei-Muara", area:"Kiulap / Gadong", vibe:"Specialty Coffee", harga:"$$", best:"Strawberry Matcha, Rose Latte", map:"HWC Coffee Brunei"},
+{nama:"Caffe Verve", daerah:"Brunei-Muara", area:"Spg 68, Batu Bersurat", vibe:"Aesthetic", harga:"$$", best:"Pizza, pasta, European vibe", map:"Caffe Verve Batu Bersurat Brunei"},
+{nama:"Salt:ed Cafe", daerah:"Brunei-Muara", area:"Batu Satu", vibe:"Aesthetic", harga:"$$", best:"Korean cafe, croissant, soboro, matcha", map:"Salted Cafe Batu Satu Brunei"},
+{nama:"One Sip Cafe", daerah:"Brunei-Muara", area:"Kg Pelambayan, BSB", vibe:"Specialty Coffee", harga:"$$", best:"Minimalist, view sungai Brunei", map:"One Sip Cafe Pelambayan Brunei"},
+{nama:"Kapra Coffee", daerah:"Brunei-Muara", area:"Kiulap", vibe:"Specialty Coffee", harga:"$$", best:"Hand-brew, barista top", map:"Kapra Coffee Kiulap Brunei"},
+{nama:"Kitani Artisan Coffee", daerah:"Brunei-Muara", area:"Jerudong Complex", vibe:"Specialty Coffee", harga:"$$", best:"Japanese vibe, pourover dalam ceramic sake", map:"Kitani Artisan Coffee Jerudong Brunei"},
+{nama:"The Krema Coffee", daerah:"Brunei-Muara", area:"Kiulap / BSB", vibe:"Specialty Coffee", harga:"$$", best:"Dari IG delivery jadi cafe, roasting sendiri", map:"The Krema Coffee Brunei"},
+{nama:"Games & Lattes", daerah:"Brunei-Muara", area:"BSB", vibe:"Study", harga:"$$", best:"Main board game sambil kopi", map:"Games and Lattes Brunei"},
+{nama:"8 Bytes Cafe", daerah:"Brunei-Muara", area:"BSB", vibe:"Aesthetic", harga:"$$", best:"Vintage game, 8 Bytes Platter", map:"8 Bytes Cafe Brunei"},
+{nama:"Mei Kong Coffee Shop", daerah:"Brunei-Muara", area:"BSB, Waterfront", vibe:"Kopitiam", harga:"$", best:"Kopitiam local, cultural experience", map:"Mei Kong Coffee Shop Bandar Seri Begawan"},
+{nama:"Ri's Cafe", daerah:"Brunei-Muara", area:"Riverside, BSB", vibe:"Aesthetic", harga:"$", best:"Spanish Latte $3-4, rattan vibe, 2 tingkat", map:"Ri's Cafe Bandar Seri Begawan"},
+{nama:"The Drip BN", daerah:"Brunei-Muara", area:"Kg Jerudong", vibe:"Study", harga:"$$", best:"Parking besar, tempat lepak luas, covered", map:"The Drip BN Jerudong Brunei"},
+{nama:"KOOHII Club", daerah:"Brunei-Muara", area:"BSB", vibe:"Aesthetic", harga:"$$", best:"Matcha Strawberry, banana chocolate pie", map:"KOOHII Cafe Bandar Seri Begawan"},
+{nama:"Jumpa Coffee Roasters", daerah:"Brunei-Muara", area:"The Promenade Samakaya", vibe:"Specialty Coffee", harga:"$$", best:"Pistachio latte, beans fresh roast", map:"Jumpa Coffee Roasters Samakaya Brunei"},
+{nama:"Coffee Up!", daerah:"Brunei-Muara", area:"UBD Botanical Centre", vibe:"Aesthetic", harga:"$$", best:"Garden cafe, syrup homemade", map:"Coffee Up UBD Brunei"},
+{nama:"Kasane Cafe", daerah:"Brunei-Muara", area:"Spg 326, Kg Kapok, Jalan Muara", vibe:"Aesthetic", harga:"$$", best:"Matcha latte, matcha supplier", map:"Kasane Cafe Kapok Brunei"},
+{nama:"Alter Ego / Beef & Beyond", daerah:"Brunei-Muara", area:"Setia Kenangan II, Kiulap", vibe:"Aesthetic", harga:"$$$", best:"Dessert cantik, comfort food", map:"Alter Ego Cafe Kiulap Brunei"},
+{nama:"High Frequency Cafe", daerah:"Brunei-Muara", area:"BSB", vibe:"Aesthetic", harga:"$$", best:"Staff friendly, vibe tenang", map:"High Frequency Cafe Brunei"},
+{nama:"Kopifix", daerah:"Tutong", area:"Tutong Town", vibe:"Specialty Coffee", harga:"$", best:"Blue counter, fix caffeine kau", map:"Kopifix Tutong Brunei"},
+{nama:"I Luv Cafe Bistro", daerah:"Tutong", area:"Spg 45, Tutong", vibe:"Aesthetic", harga:"$$", best:"Cafe besar di Tutong", map:"I Luv Cafe Bistro Tutong Brunei"},
+{nama:"Universal Cafe", daerah:"Belait", area:"11 Jalan Sultan Omar Ali, Seria", vibe:"Kopitiam", harga:"$", best:"Hot-stone toasted bread, kopi old school", map:"Universal Cafe Seria Brunei"},
+{nama:"Thinking Cup Cafe", daerah:"Belait", area:"Jalan Sultan Omar Ali, Seria", vibe:"Specialty Coffee", harga:"$$", best:"Specialty coffee di Seria town", map:"Thinking Cup Cafe Seria Brunei"},
+{nama:"The Slice - Jalan Pretty", daerah:"Belait", area:"Jalan Pretty, Kuala Belait", vibe:"Aesthetic", harga:"$$", best:"Choc chunk cookies, S'mores brownie", map:"The Slice Jalan Pretty Kuala Belait"},
+{nama:"The Corner House", daerah:"Belait", area:"Keoja Hotel, Kuala Belait", vibe:"Aesthetic", harga:"$$", best:"Brunch all day di Belait", map:"The Corner House Keoja Hotel Kuala Belait"},
+{nama:"Bla Bla Cafe", daerah:"Belait", area:"Complex 333, Kuala Belait", vibe:"Aesthetic", harga:"$$", best:"Cafe di KB, lepak petang", map:"Bla Bla Cafe Kuala Belait Brunei"},
+{nama:"De'Royalle Cafe", daerah:"Brunei-Muara", area:"BSB", vibe:"Study", harga:"$$", best:"Buka 24 jam, ada buku", map:"De Royalle Cafe Brunei"},
+{nama:"CheezBox Cafe", daerah:"Brunei-Muara", area:"Setia Point, Kg Lambak", vibe:"Aesthetic", harga:"$$", best:"Steak, cheese, family friendly", map:"CheezBox Cafe Setia Point Brunei"},
+{nama:"Cafe Temburong - Bangar", daerah:"Temburong", area:"Pekan Bangar", vibe:"Kopitiam", harga:"$", best:"Kopi pagi sebelum naik bot / jalan", map:"Cafe Bangar Temburong Brunei"},
+{nama:"New Tea Kopitiam", daerah:"Temburong", area:"Bangar, Temburong", vibe:"Kopitiam", harga:"$", best:"Kopitiam Temburong", map:"New Tea Kopitiam Bangar Brunei"},
+];
+
+function setFilter(f, el){
+  currentFilter = f;
+  document.querySelectorAll('#filters button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function toggleFav(nama, btn){
+  if(favs.includes(nama)) favs = favs.filter(f=>f!==nama);
+  else favs.push(nama);
+  localStorage.setItem('cafe_favs', JSON.stringify(favs));
+  render();
+}
+
+function render(){
+  let q = document.getElementById('search').value.toLowerCase();
+  let list = cafes.filter(c=>{
+    let matchQ = c.nama.toLowerCase().includes(q) || c.area.toLowerCase().includes(q) || c.best.toLowerCase().includes(q);
+    if(!matchQ) return false;
+    if(currentFilter==='Semua') return true;
+    if(currentFilter==='❤️ Fav') return favs.includes(c.nama);
+    if(currentFilter==='Brunei-Muara' || currentFilter==='Tutong' || currentFilter==='Belait' || currentFilter==='Temburong') return c.daerah===currentFilter;
+    return c.vibe===currentFilter;
+  });
+
+  document.getElementById('count').textContent = list.length + ' cafe jumpa • ' + favs.length + ' fav disimpan';
+  let grid = document.getElementById('grid');
+  if(list.length===0){ grid.innerHTML = '<div class="empty">☕ Indah jumpa cafe tu.<br>Cuba taip lain, cth: Batches / Tutong / Kopi</div>'; return; }
+
+  grid.innerHTML = list.map(c=>{
+    let badgeClass = c.daerah==='Brunei-Muara'?'badge-muata':c.daerah==='Tutong'?'badge-tutong':c.daerah==='Belait'?'badge-belait':'badge-temburong';
+    let isFav = favs.includes(c.nama);
+    let mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.map);
+    return `<div class="card">
+      <div class="card-top"><h3>☕ ${c.nama}</h3><span style="font-size:18px">${isFav?'❤️':'🤍'}</span></div>
+      <div style="padding:0 16px"><span class="badge ${badgeClass}">${c.daerah}</span> <span class="badge badge-vibe">${c.vibe} • ${c.harga}</span></div>
+      <p><b>📍 ${c.area}</b><br>⭐ Best: ${c.best}</p>
+      <div class="meta"><span>💰 ${c.harga}</span><span>📍 ${c.daerah}</span><span>${c.vibe}</span></div>
+      <div class="actions">
+        <a class="btn-map" href="${mapsUrl}" target="_blank">📍 Location / Maps</a>
+        <button class="btn-fav ${isFav?'loved':''}" onclick="toggleFav('${c.nama.replace(/'/g,"\\'")}',this)">${isFav?'❤️ Fav':'🤍 Fav'}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+render();
+</script>
+</body>
+</html>
