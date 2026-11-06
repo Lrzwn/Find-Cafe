@@ -44,7 +44,11 @@ body{margin:0;background:#FFF7ED;color:#1c1917;padding-bottom:40px}
 </style>
 </head>
 <body>
-
+<div id="splash">
+  <div style="font-size:64px;">☕</div>
+  <div style="font-size:24px;font-weight:800;color:#451a03;">Cafe Finder</div>
+  <div style="font-size:13px;color:#78716c;margin-top:4px;">Cari Cafe Best di Brunei</div>
+</div>
 <div class="header">
   <div class="logo"><span>☕</span></div>
   <h1>Cafe Finder Brunei 🇧🇳</h1>
@@ -167,6 +171,14 @@ function render(){
   }).join('');
 }
 render();
+</script>
+    <style>
+#splash{position:fixed;inset:0;background:#FFF7ED;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:6px;transition:opacity .5s}
+#splash.hide{opacity:0;pointer-events:none}
+</style>
+<script>
+setTimeout(()=>{document.getElementById('splash').classList.add('hide')},1500);
+setTimeout(()=>{document.getElementById('splash').remove()},2100);
 </script>
 </body>
 </html>
